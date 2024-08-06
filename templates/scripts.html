@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+    <title>Script Runner</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="container">
+    <h1>Run a Script</h1>
+    <form method="post">
+        <table>
+            <thead>
+                <tr>
+                    <th>Script</th>
+                    <th>Parameters</th>
+                    <th>Environment Variables</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for script in scripts %}
+                <tr>
+                    <td>{{ script }}</td>
+                    <td><input type="text" name="params_{{ script }}" placeholder="Parameters"></td>
+                    <td><input type="text" name="env_vars_{{ script }}" placeholder="ENV_VAR=value"></td>
+                    <td><button type="submit" name="script" value="{{ script }}">Run</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+    {% if output %}
+        <h2>Output:</h2>
+        <pre>{{ output }}</pre>
+    {% endif %}
+    {% if error %}
+        <h2>Error:</h2>
+        <pre>{{ error }}</pre>
+    {% endif %}
+</div>
+</body>
+</html>

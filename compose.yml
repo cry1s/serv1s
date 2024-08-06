@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./scripts:/app/scripts
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PASSWORD=${PASSWORD}
