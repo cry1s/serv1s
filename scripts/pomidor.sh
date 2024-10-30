@@ -1,3 +1,3 @@
 #!/bin/bash
 
-echo "Заднее сальто"
+echo "Заднее сальто $checking $debug"
