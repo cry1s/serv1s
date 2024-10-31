@@ -64,9 +64,11 @@ def get_script(script_name):
 @login_required
 def run_script():
     script_name = request.args.get('script_name')
-    params = request.args.get('params', '')
     env_vars = json.loads(request.args.get('env_vars', '{}'))
     script_path = os.path.join('scripts', script_name)
+
+    allowed_keys = load_script_env(script_name).keys()
+    env_vars = {key: value for key, value in env_vars.items() if key in allowed_keys}
 
     log_filename = f"{script_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     log_path = os.path.join(os.path.dirname(__file__), 'logs', log_filename)
@@ -89,7 +91,7 @@ def run_script():
 
         with open(log_path, 'a') as log_file:
             process = subprocess.Popen(
-                ['bash', script_path] + params.split(),
+                ['bash', script_path],
                 env={**os.environ, **env_vars},
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

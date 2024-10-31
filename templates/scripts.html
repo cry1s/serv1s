@@ -1,6 +1,8 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Script Runner</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -9,26 +11,30 @@
 <div class="container">
     <div class="left-section">
         <h1>Run a Script</h1>
+        
+        <button id="backButton" style="display: none;" onclick="showScriptList()">Back to Script List</button>
+        
         <input type="text" id="search" placeholder="Search for scripts...">
-        <table id="scriptTable">
-            <thead>
-                <tr>
-                    <th>Script</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for script in scripts %}
-                <tr>
-                    <td>{{ script }}</td>
-                    <td><button onclick="loadScriptParams('{{ script }}')">Run</button></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div id="scriptList">
+            <table id="scriptTable">
+                <thead>
+                    <tr>
+                        <th>Script</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for script in scripts %}
+                    <tr>
+                        <td>{{ script }}</td>
+                        <td><button onclick="loadScriptParams('{{ script }}')">Run</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
         <div id="scriptParams" style="display: none;">
-            <h2>Parameters for <span id="selectedScript"></span></h2>
             <form id="runScriptForm">
                 <input type="hidden" name="script_name" id="script_name">
                 <input type="hidden" name="env_vars" id="env_vars">
@@ -50,10 +56,12 @@
 
 <script>
     function loadScriptParams(script) {
-        $('#selectedScript').text(script);
         $('#script_name').val(script);
+        $('#scriptList').hide();
+        $('#search').hide();
+        $('#backButton').show();
         $('#scriptParams').show();
-        
+
         $.getJSON(`/scripts/${script}`, function(envVars) {
             $('#envVars').empty();
             $.each(envVars, function(key, value) {
@@ -67,25 +75,31 @@
         });
     }
 
+    function showScriptList() {
+        $('#scriptList').show();
+        $('#search').show();
+        $('#backButton').hide();
+        $('#scriptParams').hide();
+    }
+
     function startScript() {
         let script_name = encodeURIComponent($('#script_name').val());
-        let params = encodeURIComponent($('#params').val());
         let envVars = {};
 
         $('#envVars input[type="text"]').each(function() {
             let input = $(this);
             let name = input.attr('name');
-            if (name?.startsWith("env_var_")) {
+            if (name && name.startsWith("env_var_")) {
                 let key = name.replace("env_var_", "");
                 envVars[key] = input.val();
             }
         });
 
         $('#output').empty();
-        let source = new EventSource(`/run_script?script_name=${script_name}&params=${params}&env_vars=${encodeURIComponent(JSON.stringify(envVars))}`);
+        let source = new EventSource(`/run_script?script_name=${script_name}&env_vars=${encodeURIComponent(JSON.stringify(envVars))}`);
 
         source.onmessage = function(event) {
-            $('#output').append(event.data + "\n");
+            $('#output').append(event.data + "\n").scrollTop($('#output')[0].scrollHeight);
         };
 
         source.onerror = function() {
@@ -96,7 +110,7 @@
     $('#search').on('keyup', function() {
         var value = $(this).val().toLowerCase();
         $("#scriptTable tbody tr").filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
         });
     });
 </script>
