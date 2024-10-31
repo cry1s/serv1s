@@ -7,51 +7,45 @@
 </head>
 <body>
 <div class="container">
-    <h1>Run a Script</h1>
-    <input type="text" id="search" placeholder="Search for scripts...">
-    
-    <table id="scriptTable">
-        <thead>
-            <tr>
-                <th>Script</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for script in scripts %}
-            <tr>
-                <td>{{ script }}</td>
-                <td><button onclick="loadScriptParams('{{ script }}')">Run</button></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="left-section">
+        <h1>Run a Script</h1>
+        <input type="text" id="search" placeholder="Search for scripts...">
+        <table id="scriptTable">
+            <thead>
+                <tr>
+                    <th>Script</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for script in scripts %}
+                <tr>
+                    <td>{{ script }}</td>
+                    <td><button onclick="loadScriptParams('{{ script }}')">Run</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <div id="scriptParams" style="display: none;">
-        <h2>Parameters for <span id="selectedScript"></span></h2>
-        <form id="runScriptForm" method="post" action="{{ url_for('run_script') }}">
-            <input type="hidden" name="script_name" id="script_name">
-            <input type="hidden" name="env_vars" id="env_vars">
-            <label>Command-line Parameters:</label>
-            <input type="text" name="params" placeholder="Parameters">
-            
-            <div id="envVars">
-                <label>Environment Variables:</label>
-                <!-- .env vars loaded here -->
-            </div>
-            
-            <button type="button" onclick="submitForm()">Execute</button>
-        </form>
+        <div id="scriptParams" style="display: none;">
+            <h2>Parameters for <span id="selectedScript"></span></h2>
+            <form id="runScriptForm">
+                <input type="hidden" name="script_name" id="script_name">
+                <input type="hidden" name="env_vars" id="env_vars">
+                
+                <div id="envVars">
+                    <label>Environment Variables:</label>
+                </div>
+                
+                <button type="button" onclick="startScript()">Execute</button>
+            </form>
+        </div>
     </div>
 
-    {% if output %}
+    <div class="output-section">
         <h2>Output:</h2>
-        <pre>{{ output }}</pre>
-    {% endif %}
-    {% if error %}
-        <h2>Error:</h2>
-        <pre>{{ error }}</pre>
-    {% endif %}
+        <pre id="output"></pre>
+    </div>
 </div>
 
 <script>
@@ -70,34 +64,14 @@
                     </div>
                 `);
             });
-            $('#envVars').append(`
-                <div>
-                    <label>Custom Env Var:</label>
-                    <input type="text" id="customEnvVarKey" placeholder="KEY">
-                    <input type="text" id="customEnvVarValue" placeholder="value">
-                    <button type="button" onclick="addCustomEnvVar()">Add</button>
-                </div>
-            `);
         });
     }
 
-    function addCustomEnvVar() {
-        let key = $('#customEnvVarKey').val();
-        let value = $('#customEnvVarValue').val();
-        if (key) {
-            $('#envVars').append(`
-                <div>
-                    <label>${key}:</label>
-                    <input type="text" name="env_var_${key}" value="${value}">
-                </div>
-            `);
-            $('#customEnvVarKey').val('');
-            $('#customEnvVarValue').val('');
-        }
-    }
-
-    function submitForm() {
+    function startScript() {
+        let script_name = encodeURIComponent($('#script_name').val());
+        let params = encodeURIComponent($('#params').val());
         let envVars = {};
+
         $('#envVars input[type="text"]').each(function() {
             let input = $(this);
             let name = input.attr('name');
@@ -106,12 +80,17 @@
                 envVars[key] = input.val();
             }
         });
-        
-        // Установить значение скрытого поля env_vars как JSON строку
-        $('#env_vars').val(JSON.stringify(envVars));
 
-        // Отправить форму
-        $('#runScriptForm').submit();
+        $('#output').empty();
+        let source = new EventSource(`/run_script?script_name=${script_name}&params=${params}&env_vars=${encodeURIComponent(JSON.stringify(envVars))}`);
+
+        source.onmessage = function(event) {
+            $('#output').append(event.data + "\n");
+        };
+
+        source.onerror = function() {
+            source.close();
+        };
     }
 
     $('#search').on('keyup', function() {
