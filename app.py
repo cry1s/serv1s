@@ -64,11 +64,18 @@ def get_script(script_name):
 @login_required
 def run_script():
     script_name = request.args.get('script_name')
-    env_vars = json.loads(request.args.get('env_vars', '{}'))
-    script_path = os.path.join('scripts', script_name)
+    if script_name not in get_scripts():
+        return Response(status=403)
+    try:
+        env_vars = json.loads(request.args.get('env_vars', '{}'))
+    except:
+        env_vars = {}
 
+    # filter unallowed env vars
     allowed_keys = load_script_env(script_name).keys()
     env_vars = {key: value for key, value in env_vars.items() if key in allowed_keys}
+
+    script_path = os.path.join('scripts', script_name)
 
     log_filename = f"{script_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     log_path = os.path.join(os.path.dirname(__file__), 'logs', log_filename)
