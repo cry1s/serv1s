@@ -35,7 +35,7 @@ def get_scripts():
     try:
         return [s for s in os.listdir('scripts') if s.endswith('.sh')]
     except:
-        []
+        return ["No scripts yet. Make the 'scripts' folder in your workspace and add there some! Add scriptname.sh.env file to add default variables"]
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
