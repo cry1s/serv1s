@@ -32,7 +32,10 @@ def load_script_env(script_name):
     return {}
 
 def get_scripts():
-    return [s for s in os.listdir('scripts') if s.endswith('.sh')]
+    try:
+        return [s for s in os.listdir('scripts') if s.endswith('.sh')]
+    except:
+        []
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
