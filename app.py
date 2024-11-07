@@ -126,5 +126,9 @@ def run_script():
 
     return Response(generate_output(), mimetype='text/event-stream')
 
+
+def return_app():
+    return app
+
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
